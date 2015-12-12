@@ -97,7 +97,7 @@ class TaoBao:
 		#先判断这个路径是否存在
 		isExist=os.path.exists(path)#如果存在，则为True
 		if not isExist:
-			os.makedir(path)
+			os.mkdir(path)
 			return True
 		else:
 			print u"该目录已经存在"
@@ -108,10 +108,14 @@ class TaoBao:
 		return htmlContent.read()
 	#从页面的html代码中得到MM的个人简介
 	def getBrief(self,content):
-		pattern=re.compile('<div class="mm-aixiu-content".*?>(.*?)<!--',re.S)
+		pattern=re.compile(r'<div class="mm-aixiu-content".*?>(.*?)<strong>.*?<img',re.S)
 		result=re.search(pattern,content)
-		return self.tool.replace(result.group(1))
-	#获取MM网页上的所有图片
+		print result
+		if result is not None:
+			return self.tool.replace(result.group(1))
+		else:
+			return None
+	#获取MM网页上的所有图片的地址
 	def getAllImg(self,content):
 		pattern=re.compile(r'<img style=".*?src="(.*?)">.*?</strong>',re.S)
 		images=re.findall(pattern ,content)
@@ -140,19 +144,24 @@ class TaoBao:
 		for item in contents:
 			print u"发现了一位模特，名字、年龄和位置为：",item[2],item[3],item[4]
 			print u"正在保存",item[2],u"的全部信息"
+			print u"个人详情页面的URL：",item[0]
 			#个人详情页面的URL
-			detailURL=item[0]
-			#得到个人详情页面的代码
+			detailURL="http:"+item[0]
+			print u"个人详情页面的URL：",detailURL
+			#得到个人详情页面的html代码
 			detailPageContent=self.getDetailPage(detailURL)
+			print detailPageContent
 			#获取个人简介
 			brief=self.getBrief(detailPageContent)
 			#获取所有图片列表
 			images=self.getAllImg(detailPageContent)
 			self.mkdir(item[2])#根据MM的名字来创建目录
 			#保存个人简介
-			self.saveBrief(brief,item[2])
+			if brief is not None:
+				self.saveBrief(brief,item[2])
 			#保存图像
-			self.saveIcon(item[1],item[2])
+			iconUrl="http:"+item[1]
+			self.saveIcon(iconUrl,item[2])
 			#保存图片
 			self.saveImgs(images,item[2])
 			
@@ -162,7 +171,9 @@ url="https://mm.taobao.com/json/request_top_list.htm"
 page=raw_input("input a page:")
 taobao=TaoBao(url,page)
 taobao.getPageHtml()
+taobao.savePageInfomation()
+# taobao.getPageHtml()
 # taobao.getName()
 # taobao.getAge()
-contents=taobao.getMMInformation()
-taobao.savePageInfomation()
+# contents=taobao.getMMInformation()
+# taobao.savePageInfomation()
